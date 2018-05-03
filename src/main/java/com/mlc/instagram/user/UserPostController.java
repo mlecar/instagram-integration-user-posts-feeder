@@ -15,7 +15,7 @@ import com.rometools.rome.io.FeedException;
 
 @RestController
 @RequestMapping(value = { "/instagram", "/instagram/" })
-public class UserController {
+public class UserPostController {
 
     @Autowired
     private RestTemplate restTemplate;
@@ -28,7 +28,7 @@ public class UserController {
     private FeedGenerator feedGenerator;
 
     @ResponseBody
-    @GetMapping(value = { "/user/{userId}/posts/rss", "/user/{userId}/posts/rss/" }, produces = { MediaType.APPLICATION_RSS_XML_VALUE })
+    @GetMapping(value = { "/user/{userId}/posts/rss", "/user/{userId}/posts/rss/" }, produces = MediaType.APPLICATION_RSS_XML_VALUE)
     public String getUserPostsRSS(@PathVariable String userId) throws FeedException {
 
         ResponseEntity<String> userContent = restTemplate.getForEntity(instagramUrl, String.class, userId);
@@ -37,7 +37,7 @@ public class UserController {
     }
 
     @ResponseBody
-    @GetMapping(value = { "/user/{userId}/posts/atom", "/user/{userId}/posts/atom/" }, produces = { MediaType.APPLICATION_ATOM_XML_VALUE })
+    @GetMapping(value = { "/user/{userId}/posts/atom", "/user/{userId}/posts/atom/" }, produces = MediaType.APPLICATION_ATOM_XML_VALUE)
     public String getUserPostsAtom(@PathVariable String userId) throws FeedException {
 
         ResponseEntity<String> userContent = restTemplate.getForEntity(instagramUrl, String.class, userId);

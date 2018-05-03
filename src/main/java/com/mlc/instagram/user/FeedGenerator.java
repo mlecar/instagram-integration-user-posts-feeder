@@ -4,7 +4,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Scanner;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,72 +31,58 @@ public class FeedGenerator {
     @Value("${instagram.url}")
     private String instagramUrl;
 
+    @Autowired
+    private ContentReader contentReader;
+
     public String generateFeed(String content, String userId, String feedType) throws FeedException {
 
-        Scanner scanner = new Scanner(content);
+        String jsonContent = contentReader.search(content);
 
         SyndFeed feed = new SyndFeedImpl();
 
-        while (scanner.hasNext()) {
-            String line = scanner.nextLine();
-            if (line.contains("window._sharedData = ")) {
-                String userPosts = line.replaceFirst("<script type=\"text/javascript\">window._sharedData = ", "").replace(";</script>", "");
+        JsonElement element = new Gson().fromJson(jsonContent, JsonElement.class);
 
-                JsonElement element = new Gson().fromJson(userPosts, JsonElement.class);
+        JsonObject user = element.getAsJsonObject().get("entry_data").getAsJsonObject().get("ProfilePage").getAsJsonArray().get(0).getAsJsonObject().get("graphql").getAsJsonObject().get("user").getAsJsonObject();
 
-                JsonObject user = element.getAsJsonObject().get("entry_data").getAsJsonObject().get("ProfilePage").getAsJsonArray().get(0).getAsJsonObject().get("graphql").getAsJsonObject().get("user").getAsJsonObject();
+        JsonObject media = user.getAsJsonObject().get("edge_owner_to_timeline_media").getAsJsonObject();
 
-                JsonObject media = user.getAsJsonObject().get("edge_owner_to_timeline_media").getAsJsonObject();
-                int postsQt = media.get("count").getAsInt();
+        JsonArray posts = media.get("edges").getAsJsonArray();
 
-                JsonArray posts = media.get("edges").getAsJsonArray();
+        feed.setFeedType(feedType);
 
-                feed.setFeedType(feedType);
+        feed.setTitle("Instagram posts by " + userId);
+        feed.setLink(instagramUrl.replace("{userId}", userId));
+        feed.setDescription("Instagram posts by " + userId);
 
-                feed.setTitle("Instagram posts by " + userId);
-                feed.setLink(instagramUrl.replace("{userId}", userId));
-                feed.setDescription("Instagram posts by " + userId);
+        SyndImage profilePic = new SyndImageImpl();
+        profilePic.setTitle("Profile Picture");
+        profilePic.setUrl(user.get("profile_pic_url_hd").getAsString());
+        profilePic.setLink(user.get("profile_pic_url_hd").getAsString());
+        feed.setImage(profilePic);
 
-                SyndImage profilePic = new SyndImageImpl();
-                profilePic.setTitle("Profile Picture");
-                profilePic.setUrl(user.get("profile_pic_url_hd").getAsString());
-                profilePic.setLink(user.get("profile_pic_url_hd").getAsString());
-                feed.setImage(profilePic);
+        SyndImage icon = new SyndImageImpl();
+        icon.setTitle("Profile Icon");
+        icon.setUrl(user.get("profile_pic_url").getAsString());
+        icon.setLink(user.get("profile_pic_url").getAsString());
+        feed.setIcon(icon);
 
-                SyndImage icon = new SyndImageImpl();
-                icon.setTitle("Profile Icon");
-                icon.setUrl(user.get("profile_pic_url").getAsString());
-                icon.setLink(user.get("profile_pic_url").getAsString());
-                feed.setIcon(icon);
-                List<SyndEntry> entries = new ArrayList<>();
+        List<SyndEntry> entries = new ArrayList<>();
+        for (JsonElement post : posts) {
 
-                for (JsonElement post : posts) {
+            SyndEntry entry = new SyndEntryImpl();
+            entry.setTitle(post.getAsJsonObject().get("node").getAsJsonObject().get("edge_media_to_caption").getAsJsonObject().get("edges").getAsJsonArray().get(0).getAsJsonObject().get("node").getAsJsonObject().get("text").getAsString());
+            entry.setLink(post.getAsJsonObject().get("node").getAsJsonObject().get("display_url").getAsString());
+            entry.setPublishedDate(Date.from(Instant.ofEpochSecond(post.getAsJsonObject().get("node").getAsJsonObject().get("taken_at_timestamp").getAsLong())));
 
-                    SyndEntry entry;
-                    SyndContent description;
+            SyndContent description = new SyndContentImpl();
+            description.setType("text/html");
+            description.setValue("Instagram posts by user");
+            entry.setDescription(description);
 
-                    entry = new SyndEntryImpl();
-                    entry.setTitle(post.getAsJsonObject().get("node").getAsJsonObject().get("edge_media_to_caption").getAsJsonObject().get("edges").getAsJsonArray().get(0).getAsJsonObject().get("node").getAsJsonObject().get("text").getAsString());
-                    entry.setLink(post.getAsJsonObject().get("node").getAsJsonObject().get("display_url").getAsString());
-                    entry.setPublishedDate(Date.from(Instant.ofEpochSecond(post.getAsJsonObject().get("node").getAsJsonObject().get("taken_at_timestamp").getAsLong())));
-                    description = new SyndContentImpl();
-                    description.setType("text/plain");
-                    description.setValue("Initial release of ROME");
-                    entry.setDescription(description);
-                    entries.add(entry);
-
-                    String title = "Instagram posts by " + user.get("username").getAsString();
-                    String link = post.getAsJsonObject().get("node").getAsJsonObject().get("display_url").getAsString();
-                    String descr = post.getAsJsonObject().get("node").getAsJsonObject().get("edge_media_to_caption").getAsJsonObject().get("edges").getAsJsonArray().get(0).getAsJsonObject().get("node").getAsJsonObject().get("text").getAsString();
-                    Instant date = Instant.ofEpochSecond(post.getAsJsonObject().get("node").getAsJsonObject().get("taken_at_timestamp").getAsLong());
-                    System.out.println(date + " - " + title + " - " + link + " - " + descr);
-                }
-
-                feed.setEntries(entries);
-            }
+            entries.add(entry);
         }
 
-        scanner.close();
+        feed.setEntries(entries);
 
         return new SyndFeedOutput().outputString(feed);
 
