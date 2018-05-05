@@ -5,11 +5,39 @@
 	<artifactId>instagram-user-post-reader</artifactId>
 	<version>1.0.0-SNAPSHOT</version>
 
+	<scm>
+		<connection>scm:git:https://github.com/mlecar/instagram-integration-user-posts-feeder.git</connection>
+		<developerConnection>scm:git:https://github.com/mlecar/instagram-integration-user-posts-feeder.git</developerConnection>
+		<url>https://github.com/mlecar/instagram-integration-user-posts-feeder.git</url>
+		<tag>HEAD</tag>
+	</scm>
+
+	<distributionManagement>
+		<repository>
+			<id>maven-repository</id>
+			<url>file:///home/marcelolecar/dev/repository/maven-repository/</url>
+		</repository>
+	</distributionManagement>
+
+	<properties>
+		<java.version>1.8</java.version>
+	</properties>
+
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
 		<version>2.0.1.RELEASE</version>
 	</parent>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+			</plugin>
+		</plugins>
+	</build>
+
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

@@ -17,6 +17,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
+/* Just a test to try the solution*/
 @RunWith(SpringRunner.class)
 @ContextConfiguration
 public class UserPostReaderTest {
@@ -27,7 +28,7 @@ public class UserPostReaderTest {
     @Test
     public void readPosts() throws IOException {
 
-        Resource resource = resourceLoader.getResource("classpath:instagram.user.realdonaldtrump.source.page.html");
+        Resource resource = resourceLoader.getResource("classpath:instagram.user.metallica.source.page.html");
 
         Scanner scanner = new Scanner(resource.getInputStream());
 
@@ -50,7 +51,6 @@ public class UserPostReaderTest {
                     String link = post.getAsJsonObject().get("node").getAsJsonObject().get("display_url").getAsString();
                     String description = post.getAsJsonObject().get("node").getAsJsonObject().get("edge_media_to_caption").getAsJsonObject().get("edges").getAsJsonArray().get(0).getAsJsonObject().get("node").getAsJsonObject().get("text").getAsString();
                     Date date = new Date(post.getAsJsonObject().get("node").getAsJsonObject().get("taken_at_timestamp").getAsLong());
-                    System.out.println(date + " - " + title + " - " + link + " - " + description);
                 }
             }
         }
